@@ -41,12 +41,49 @@ async function run() {
       res.send(result);
     });
 
+    app.delete("/job/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await jobCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // update
     app.get("/job/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await jobCollection.findOne(query);
       res.send(result);
     });
+
+    app.put("/job/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const upjob = req.body;
+      const job = {
+        $set: {
+          image: upjob.image,
+          name: upjob.name,
+          username: upjob.username,
+          type: upjob.type,
+          price: upjob.price,
+          description: upjob.description,
+          pdate: upjob.pdate,
+          ddate: upjob.ddate,
+          applicant: upjob.applicant,
+        },
+      };
+      const result = await jobCollection.updateOne(filter, job, options);
+      res.send(result);
+    });
+
+    // app.get("/job/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) };
+    //   const result = await jobCollection.findOne(query);
+    //   res.send(result);
+    // });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
@@ -55,7 +92,7 @@ async function run() {
     );
   } finally {
     // Ensures that the client will close when you finish/error
-    // await client.close();
+    //  await client.close();
   }
 }
 run().catch(console.dir);
