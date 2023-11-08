@@ -33,6 +33,28 @@ const client = new MongoClient(uri, {
   },
 });
 
+// middlewares 
+const logger = (req, res, next) =>{
+    console.log('log: info', req.method, req.url);
+    next();
+}
+
+const verifyToken = (req, res, next) =>{
+    const token = req?.cookies?.token;
+    // console.log('token in the middleware', token);
+    // no token available 
+    if(!token){
+        return res.status(401).send({message: 'unauthorized access'})
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
+        if(err){
+            return res.status(401).send({message: 'unauthorized access'})
+        }
+        req.user = decoded;
+        next();
+    })
+}
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -48,7 +70,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/job", async (req, res) => {
+    app.get("/job", logger,verifyToken,async (req, res) => {
+        if (req.user.email !== req.query.email) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
+        let query = {};
+        if (req.query?.email) {
+          query = { email: req.query.email };
+        }
       const cursor = jobCollection.find();
       const result = await cursor.toArray();
       res.send(result);
@@ -62,7 +91,8 @@ async function run() {
     });
 
     // update
-    app.get("/job/:id", async (req, res) => {
+    app.get("/job/:id", logger, verifyToken, async (req, res) => {
+      
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await jobCollection.findOne(query);
@@ -99,7 +129,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/appjob", async (req, res) => {
+    app.get("/appjob", logger, verifyToken, async (req, res) => {
+        if (req.user.email !== req.query.email) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
+        let query = {};
+        if (req.query?.email) {
+          query = { email: req.query.email };
+        }
       const cursor = appjobCollection.find();
       const result = await cursor.toArray();
       res.send(result);
