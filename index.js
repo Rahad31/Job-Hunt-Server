@@ -103,7 +103,13 @@ async function run() {
         expiresIn: "1h",
       });
 
-      // 
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        })
+        .send({ success: true });
     });
 
     // app.get("/appjob", async (req, res) => {
